@@ -1,0 +1,188 @@
+import pygame
+import random
+import sys
+
+ pygame
+pygame.init()
+
+
+WIDTH, HEIGHT = 800, 400
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("لعبة القفز فوق السيارات")
+
+
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
+
+
+player_width = 40
+player_height = 60
+player_x = 100
+player_y = HEIGHT - player_height - 10
+player_vel_y = 0
+player_jump = False
+gravity = 1
+jump_strength = -18
+
+
+car_width = 60
+car_height = 40
+base_car_speed = 5
+car_speed = base_car_speed
+cars = []
+car_spawn_rate = 60  
+
+
+score = 0
+high_score = 0
+font = pygame.font.SysFont(None, 36)
+small_font = pygame.font.SysFont(None, 24)
+
+
+clock = pygame.time.Clock()
+
+def draw_player(x, y):
+    pygame.draw.rect(screen, BLUE, (x, y, player_width, player_height))
+    
+    pygame.draw.circle(screen, WHITE, (x + 10, y + 15), 5)
+    pygame.draw.circle(screen, WHITE, (x + 30, y + 15), 5)
+
+def draw_car(x, y):
+    pygame.draw.rect(screen, RED, (x, y, car_width, car_height))
+    
+    pygame.draw.rect(screen, BLACK, (x + 5, y + 5, car_width - 10, car_height - 20))
+    pygame.draw.rect(screen, BLACK, (x + 5, y + 25, car_width - 10, car_height - 20))
+
+def show_score():
+    score_text = font.render(f"النقاط: {score}", True, BLACK)
+    screen.blit(score_text, (10, 10))
+    
+    high_score_text = font.render(f"أعلى score: {high_score}", True, BLACK)
+    screen.blit(high_score_text, (10, 50))
+    
+    
+    if score == 0:
+        instruction_text = small_font.render("اضغط SPACE للقفز وتجنب السيارات!", True, BLACK)
+        screen.blit(instruction_text, (WIDTH // 2 - 150, 20))
+
+def show_game_over():
+    overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 128))  # خلفية شبه شفافة
+    screen.blit(overlay, (0, 0))
+    
+    game_over_text = font.render("انتهت اللعبة!", True, WHITE)
+    score_text = font.render(f"النقاط: {score}", True, WHITE)
+    restart_text = font.render("اضغط على R للعب مرة أخرى", True, WHITE)
+    quit_text = font.render("اضغط على Q للخروج", True, WHITE)
+    
+    screen.blit(game_over_text, (WIDTH//2 - 80, HEIGHT//2 - 50))
+    screen.blit(score_text, (WIDTH//2 - 60, HEIGHT//2 - 10))
+    screen.blit(restart_text, (WIDTH//2 - 150, HEIGHT//2 + 30))
+    screen.blit(quit_text, (WIDTH//2 - 100, HEIGHT//2 + 70))
+
+def reset_game():
+    global player_y, player_vel_y, player_jump, score, cars, car_speed, car_spawn_rate
+    player_y = HEIGHT - player_height - 10
+    player_vel_y = 0
+    player_jump = False
+    score = 0
+    cars = []
+    car_speed = base_car_speed
+    car_spawn_rate = 60
+
+def increase_difficulty():
+    global car_speed, car_spawn_rate
+    
+    if score > 0 and score % 10 == 0:
+        car_speed = base_car_speed + (score // 10)
+    
+    
+    if score > 0 and score % 5 == 0:
+        car_spawn_rate = max(20, 60 - (score // 2))
+
+
+def main_game():
+    global player_y, player_vel_y, player_jump, score, cars, high_score, car_speed, car_spawn_rate
+    
+    
+    running = True
+    game_active = True
+    
+    while running:
+        screen.fill(WHITE)
+        
+        
+        pygame.draw.line(screen, BLACK, (0, HEIGHT - 10), (WIDTH, HEIGHT - 10), 2)
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE and not player_jump and game_active:
+                    player_vel_y = jump_strength
+                    player_jump = True
+                
+                if not game_active:
+                    if event.key == pygame.K_r:
+                        reset_game()
+                        game_active = True
+                    if event.key == pygame.K_q:
+                        running = False
+        
+        if game_active:
+            
+            player_y += player_vel_y
+            player_vel_y += gravity
+            
+            
+            if player_y >= HEIGHT - player_height - 10:
+                player_y = HEIGHT - player_height - 10
+                player_jump = False
+            
+            
+            increase_difficulty()
+            
+          
+            if random.randint(1, car_spawn_rate) == 1:
+                car_y = HEIGHT - car_height - 10
+                cars.append([WIDTH, car_y])
+            
+            
+            for car in cars[:]:
+                car[0] -= 
+
+                if (player_x < car[0] + car_width and
+                    player_x + player_width > car[0] and
+                    player_y < car[1] + car_height and
+                    player_y + player_height > car[1]):
+                    game_active = False
+                    high_score = max(high_score, score)
+                
+                
+                if car[0] < -car_width:
+                    cars.remove(car)
+                    score += 1
+            
+            
+            draw_player(player_x, player_y)
+            for car in cars:
+                draw_car(car[0], car[1])
+        else:
+            show_game_over()
+        
+      
+        show_score()
+        
+        
+        pygame.display.update()
+        clock.tick(60)
+
+
+if __name__ == "__main__":
+    main_game()
+    pygame.quit()
+    sys.exit()
